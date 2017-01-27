@@ -8,7 +8,7 @@ var IRC = require('irc');
 var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
 var channels  = [ process.env['CHANNEL1'] ];
-var feed      = process.env['FEED']; // http://lorem-rss.herokuapp.com/feed?unit=second&interval=30
+var feed      = process.env['FEED'];
 var interval  = 1 // In Minutes
 
 client = new IRC.Client(server, bot, {
