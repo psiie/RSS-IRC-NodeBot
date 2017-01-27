@@ -3,13 +3,11 @@ var FEEDSUB = require('feedsub');
 var striptags = require('striptags');
 var IRC = require('irc');
 
-
-// Set up your little spambot
 var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
 var channels  = [ process.env['CHANNEL1'] ];
 var feed      = process.env['FEED'];
-var interval  = 1 // In Minutes
+var interval  = 1 // Minutes
 
 client = new IRC.Client(server, bot, {
   channels: channels,
@@ -26,9 +24,7 @@ reader = new FEEDSUB(feed, {
 
 // -------------------- Primary Logic --------------------  //
 
-var latestPostTime = new Date().valueOf() - 2400000;
-
-// console.log(IRC.colors.wrap('magenta', 'big text'), 'next item');
+var latestPostTime = new Date().valueOf();
 
 reader.on('item', function(item) {
   var postTime = new Date(item.pubdate).valueOf();
@@ -39,18 +35,18 @@ reader.on('item', function(item) {
     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
     if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
     
-    // console.log(postTime, item.title, poster);
-    // console.log(
-    //   '[' + item.title + '] ' + 
-    //   poster + ' posted: ' + 
-    //   msg + ' [ ' + item.link + ' ]'
-    // );
-    
     client.say(channels, 
       '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
             IRC.colors.wrap('dark_red', poster + ' posted: ') + 
        msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
     );
+    
+    console.log(postTime, item.title, poster);
+    // console.log(
+    //   '[' + item.title + '] ' + 
+    //   poster + ' posted: ' + 
+    //   msg + ' [ ' + item.link + ' ]'
+    // );
 
   }
 
@@ -61,7 +57,7 @@ reader.on('item', function(item) {
 
 client.addListener('message', function (nick, to, text) {
   if (text.match(bot + ' help')) {
-    client.say(to, 'RTFM, ' + nick + ': https://github.com/');
+    client.say(to, 'RTFM, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
   }
 });
 
