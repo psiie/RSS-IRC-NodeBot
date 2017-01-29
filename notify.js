@@ -18,41 +18,36 @@ client = new IRC.Client(server, bot, {
   autoConnect: true,
 });
 
-// reader = new FEEDSUB(feed, {
-//   interval: interval,
-//   forceInterval: true,
-//   autoStart: true,
-// });
+reader = new FEEDSUB(feed, {
+  interval: interval,
+  forceInterval: true,
+  autoStart: true,
+});
 
 // -------------------- Get Feed --------------------  //
 
 var latestPostTime = new Date().valueOf();
 
-// reader.on('item', function(item) {
-//   var postTime = new Date(item.pubdate).valueOf();
-//   if (postTime > latestPostTime) {
-//     latestPostTime = postTime;
+reader.on('item', function(item) {
+  var postTime = new Date(item.pubdate).valueOf();
+  if (postTime > latestPostTime) {
+    latestPostTime = postTime;
 
-//     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
-//     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
-//     if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
+    var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
+    var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
+    if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
     
-//     client.say(channels, 
-//       '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
-//             IRC.colors.wrap('dark_red', poster + ' posted: ') + 
-//        msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
-//     );
+    client.say(channels, 
+      '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
+            IRC.colors.wrap('dark_red', poster + ' posted: ') + 
+       msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
+    );
     
-//     console.log(postTime, item.title, poster);
-//     // console.log(
-//     //   '[' + item.title + '] ' + 
-//     //   poster + ' posted: ' + 
-//     //   msg + ' [ ' + item.link + ' ]'
-//     // );
+    console.log(postTime, item.title, poster);
+    // console.log('['+item.title+'] '+poster+' posted: '+msg+' [ '+item.link+' ]');
+  }
 
-//   }
-
-// });
+});
 
 // -------------------- Reply to Post --------------------  //
 
@@ -79,7 +74,8 @@ client.addListener('message', function (nick, channel, text) {
           client.say(nick, bodyObj["errors"][0]);
         } else {
           client.say(channel, 'Posted ' + nick + '\'s post to thread #' + alertRegex[2]);
-          latestPostTime = new Date().valueOf() + (120*1000); // Don't read back the new msg
+          console.log('lat post time', latestPostTime);
+          latestPostTime += (120*1000); // Don't read back the new msg
         }
       })
     } else {
@@ -88,7 +84,15 @@ client.addListener('message', function (nick, channel, text) {
 
   }
 
-  // IIAB-Bot Help
+  // !help
+  else if (alertRegex && alertRegex.length > 0 && alertRegex[1] === 'help') {
+    client.say(nick, 'Currently, I only have one command:');
+    client.say(nick, '!reply <Post ID> <Msg>');
+    client.say(nick, 'The Post ID can be obtained from the URL. In the following example, 23 is the ID:');
+    client.say(nick, '[ http://iiab.io/t/sandbox-testing-thread/23/13 ]');
+  }
+
+  // IIAB-Bot Help – old
   if (text.match(bot + ' help')) {
     client.say(channel, 'RSSIRCNodeBot, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
   }
@@ -101,8 +105,6 @@ client.addListener('message', function (nick, channel, text) {
 client.addListener('error', function(message) {
     console.log('error: ', message);
 });
-
-// Send the bot private messages to command it.
 
 client.addListener('pm', function (from, message) {
   console.log('PM from %s => %s', from, message);
