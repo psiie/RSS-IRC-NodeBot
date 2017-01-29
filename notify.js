@@ -16,49 +16,61 @@ client = new IRC.Client(server, bot, {
   autoConnect: true,
 });
 
-reader = new FEEDSUB(feed, {
-  interval: interval,
-  forceInterval: true,
-  autoStart: true,
-});
+// reader = new FEEDSUB(feed, {
+//   interval: interval,
+//   forceInterval: true,
+//   autoStart: true,
+// });
 
-// -------------------- Primary Logic --------------------  //
-
+// -------------------- Get Feed --------------------  //
+console.log('vars', server, bot, channels, feed);
 var latestPostTime = new Date().valueOf();
 
-reader.on('item', function(item) {
-  var postTime = new Date(item.pubdate).valueOf();
-  if (postTime > latestPostTime) {
-    latestPostTime = postTime;
+// reader.on('item', function(item) {
+//   var postTime = new Date(item.pubdate).valueOf();
+//   if (postTime > latestPostTime) {
+//     latestPostTime = postTime;
 
-    var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
-    var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
-    if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
+//     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
+//     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
+//     if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
     
-    client.say(channels, 
-      '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
-            IRC.colors.wrap('dark_red', poster + ' posted: ') + 
-       msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
-    );
+//     client.say(channels, 
+//       '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
+//             IRC.colors.wrap('dark_red', poster + ' posted: ') + 
+//        msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
+//     );
     
-    console.log(postTime, item.title, poster);
-    // console.log(
-    //   '[' + item.title + '] ' + 
-    //   poster + ' posted: ' + 
-    //   msg + ' [ ' + item.link + ' ]'
-    // );
+//     console.log(postTime, item.title, poster);
+//     // console.log(
+//     //   '[' + item.title + '] ' + 
+//     //   poster + ' posted: ' + 
+//     //   msg + ' [ ' + item.link + ' ]'
+//     // );
 
+//   }
+
+// });
+
+// -------------------- Reply to Post --------------------  //
+
+client.addListener('message', function (nick, channel, text) {
+
+  if (text.match(/^!reply/)[0]) {
+    console.log(nick, channel, text);
   }
 
+  if (text.match(bot + ' help')) {
+    client.say(channel, 'RTFM, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
+  }
 });
+
 
 
 // -------------------- PM Bot Features ----------------------- //
 
-client.addListener('message', function (nick, to, text) {
-  if (text.match(bot + ' help')) {
-    client.say(to, 'RTFM, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
-  }
+client.addListener('error', function(message) {
+    console.log('error: ', message);
 });
 
 // Send the bot private messages to command it.

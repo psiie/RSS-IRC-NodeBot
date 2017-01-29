@@ -1,0 +1,4 @@
+module.exports = {
+  ircUsername1: 'apikey',
+  ircUsername2: 'apikey'
+}
