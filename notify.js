@@ -2,6 +2,8 @@ var dotenv = require('dotenv').config();
 var FEEDSUB = require('feedsub');
 var striptags = require('striptags');
 var IRC = require('irc');
+var request = require('request');
+var authUsers = require('./auth_users');
 
 var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
@@ -23,7 +25,7 @@ client = new IRC.Client(server, bot, {
 // });
 
 // -------------------- Get Feed --------------------  //
-console.log('vars', server, bot, channels, feed);
+
 var latestPostTime = new Date().valueOf();
 
 // reader.on('item', function(item) {
@@ -55,13 +57,40 @@ var latestPostTime = new Date().valueOf();
 // -------------------- Reply to Post --------------------  //
 
 client.addListener('message', function (nick, channel, text) {
+  console.log(nick, channel, text);
 
-  if (text.match(/^!reply/)[0]) {
-    console.log(nick, channel, text);
+  var alertRegex = text.match(/^!(.+?)\s(.+?)\s(.+)$/);
+
+  // !reply <thread ID> <message>
+  if (alertRegex && alertRegex.length > 3 && alertRegex[1] === 'reply') {
+    if (authUsers.hasOwnProperty(nick)) {
+      var options = {
+        url: 'http://iiab.io/posts',
+        qs: {
+          api_key: authUsers[nick],
+          api_username: nick,
+          topic_id: alertRegex[2],
+          raw: alertRegex[3]
+        }
+      }
+      request.post(options, function(err, res, body) {
+        var bodyObj = JSON.parse(body);
+        if (bodyObj.hasOwnProperty("errors") && bodyObj["errors"][0]) {
+          client.say(nick, bodyObj["errors"][0]);
+        } else {
+          client.say(channel, 'Posted ' + nick + '\'s post to thread #' + alertRegex[2]);
+          latestPostTime = new Date().valueOf() + (120*1000); // Don't read back the new msg
+        }
+      })
+    } else {
+      client.say(channel, 'Cannot reply. You do not have an API key on file.')
+    }
+
   }
 
+  // IIAB-Bot Help
   if (text.match(bot + ' help')) {
-    client.say(channel, 'RTFM, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
+    client.say(channel, 'RSSIRCNodeBot, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
   }
 });
 
