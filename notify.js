@@ -54,7 +54,7 @@ reader.on('item', function(item) {
 client.addListener('message', function (nick, channel, text) {
   console.log(nick, channel, text);
 
-  var alertRegex = text.match(/^!(.+?)\s(.+?)\s(.+)$/);
+  var alertRegex = text.match(/^!(.+?)(?:\s(.+?)\s(.+))?$/);
 
   // !reply <thread ID> <message>
   if (alertRegex && alertRegex.length > 3 && alertRegex[1] === 'reply') {
@@ -85,7 +85,7 @@ client.addListener('message', function (nick, channel, text) {
   }
 
   // !help
-  else if (alertRegex && alertRegex.length > 0 && alertRegex[1] === 'help') {
+  if (alertRegex && alertRegex.length > 0 && alertRegex[1] === 'help') {
     client.say(nick, 'Currently, I only have one command:');
     client.say(nick, '!reply <Post ID> <Msg>');
     client.say(nick, 'The Post ID can be obtained from the URL. In the following example, 23 is the ID:');
