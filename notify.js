@@ -35,7 +35,10 @@ reader.on('item', function(item) {
 
     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
-    if (msg.length > 300) msg = msg.match(/.{0,300}/)[0]; // truncate
+    if (msg.length > 500) { // truncate
+      msg = msg.match(/.{0,500}/)[0];
+      msg += ' ... [message truncated] ... ';
+    } 
     
     client.say(channels, 
       '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
@@ -49,10 +52,9 @@ reader.on('item', function(item) {
 
 });
 
-// -------------------- Reply to Post --------------------  //
+// -------------------- !commands --------------------  //
 
 client.addListener('message', function (nick, channel, text) {
-  console.log(nick, channel, text);
 
   var alertRegex = text.match(/^!(.+?)(?:\s(.+?)\s(.+))?$/);
 
@@ -106,31 +108,31 @@ client.addListener('error', function(message) {
     console.log('error: ', message);
 });
 
-client.addListener('pm', function (from, message) {
-  console.log('PM from %s => %s', from, message);
+// client.addListener('pm', function (from, message) {
+//   console.log('PM from %s => %s', from, message);
 
-  if (message.match(/die/i)) {
-    console.log(from + ' killed me.');
-    client.part(channels)
-  }
-  if (message.match(/off/i)) {
-      reader.interval = null;
-  }
-  if (message.match(/quiet/i)) {
-      reader.interval = 30;
-  }
-  if (message.match(/noisy/i)) {
-      reader.interval = 1;
-  }
-  if (message.match(/join #+[A-z0-9\-\?.]+$/i)) {
-    var channel = message.match(/#+[A-z0-9\-\?.]+$/).toString();
-    console.log('Joining ' + channel);
-    client.join(channel);
-  }
-  if (message.match(/part #+[A-z0-9\-\?.]+$/i)) {
-    var channel = message.match(/#+[A-z0-9\-\?.]+$/).toString();
-    console.log('Parting ' + channel);
-    client.part(channel);
-  }
-});
+//   if (message.match(/die/i)) {
+//     console.log(from + ' killed me.');
+//     client.part(channels)
+//   }
+//   if (message.match(/off/i)) {
+//       reader.interval = null;
+//   }
+//   if (message.match(/quiet/i)) {
+//       reader.interval = 30;
+//   }
+//   if (message.match(/noisy/i)) {
+//       reader.interval = 1;
+//   }
+//   if (message.match(/join #+[A-z0-9\-\?.]+$/i)) {
+//     var channel = message.match(/#+[A-z0-9\-\?.]+$/).toString();
+//     console.log('Joining ' + channel);
+//     client.join(channel);
+//   }
+//   if (message.match(/part #+[A-z0-9\-\?.]+$/i)) {
+//     var channel = message.match(/#+[A-z0-9\-\?.]+$/).toString();
+//     console.log('Parting ' + channel);
+//     client.part(channel);
+//   }
+// });
 
