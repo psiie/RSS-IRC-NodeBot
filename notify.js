@@ -9,6 +9,7 @@ var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
 var channels  = [ process.env['CHANNEL1'] ];
 var feed      = process.env['FEED'];
+var postURL   = process.env['POSTURL'];
 var interval  = 1 // Minutes
 
 client = new IRC.Client(server, bot, {
@@ -62,7 +63,7 @@ client.addListener('message', function (nick, channel, text) {
   if (alertRegex && alertRegex.length > 3 && alertRegex[1] === 'reply') {
     if (authUsers.hasOwnProperty(nick)) {
       var options = {
-        url: 'http://iiab.io/posts',
+        url: postURL,
         qs: {
           api_key: authUsers[nick],
           api_username: nick,

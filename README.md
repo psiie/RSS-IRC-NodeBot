@@ -14,3 +14,9 @@ Create a file called `.env` and input your variables for the bot. The .env file 
 The default interval is set to 1 minute. If this is too frequent, this can be changed inside notify.js near line 10.	
 
 `node notify.js` to run the bot
+
+###ToDo
+* Create new threads
+* List all possible threads to reply to
+* Add cooldown to everything. IRC is easy to spam.
+* Fix long messages being cut off
