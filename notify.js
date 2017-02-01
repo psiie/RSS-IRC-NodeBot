@@ -10,7 +10,10 @@ var bot       = process.env['BOTNAME'];
 var channels  = [ process.env['CHANNEL1'] ];
 var feed      = process.env['FEED'];
 var postURL   = process.env['POSTURL'];
+
 var interval  = 1 // Minutes
+var latestPostTime = new Date().valueOf();
+var rateLimiterTime = 0;
 
 client = new IRC.Client(server, bot, {
   channels: channels,
@@ -25,43 +28,56 @@ reader = new FEEDSUB(feed, {
   autoStart: true,
 });
 
-// -------------------- Get Feed --------------------  //
-
-var latestPostTime = new Date().valueOf();
+// +-------------------------------------------------+ //
+// |                    Get Feed                     | //
+// +-------------------------------------------------+ //
 
 reader.on('item', function(item) {
+
+  // -- Check Timestamp, Then Initialize --
   var postTime = new Date(item.pubdate).valueOf();
   if (postTime > latestPostTime) {
     latestPostTime = postTime;
-
     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
-    if (msg.length > 500) { // truncate
+
+    // -- Truncate --
+    if (msg.length > 500) { // Is broke. Fix
       msg = msg.match(/.{0,500}/)[0];
-      msg += ' ... [message truncated] ... ';
+      msg = msg + ' ... [message truncated] ... ';
     } 
     
+    // -- Post in IRC Chat --
+    console.log(postTime, item.title, poster);
     client.say(channels, 
       '[' + IRC.colors.wrap('magenta', item.title) + '] ' + 
             IRC.colors.wrap('dark_red', poster + ' posted: ') + 
        msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
     );
     
-    console.log(postTime, item.title, poster);
-    // console.log('['+item.title+'] '+poster+' posted: '+msg+' [ '+item.link+' ]');
   }
 
 });
 
-// -------------------- !commands --------------------  //
+// +-------------------------------------------------+ //
+// |                    !commands                    | //
+// +-------------------------------------------------+ //
 
 client.addListener('message', function (nick, channel, text) {
-
   var alertRegex = text.match(/^!(.+?)(?:\s(.+?)\s(.+))?$/);
 
-  // !reply <thread ID> <message>
+  // ---------------------------- //
+  // !reply <thread ID> <message> //
+  // ---------------------------- //
   if (alertRegex && alertRegex.length > 3 && alertRegex[1] === 'reply') {
-    if (authUsers.hasOwnProperty(nick)) {
+    
+    // -- Rate limiting --
+    if (new Date.valueOf() < rateLimiterTime + (60*1000)) {
+      client.say(channel, 'Cannot reply. I am still on cooldown. Please try again in 60 seconds.');
+    } 
+
+    // -- Is authorized --
+    else if (authUsers.hasOwnProperty(nick)) {
       var options = {
         url: postURL,
         qs: {
@@ -75,40 +91,41 @@ client.addListener('message', function (nick, channel, text) {
         var bodyObj = JSON.parse(body);
         if (bodyObj.hasOwnProperty("errors") && bodyObj["errors"][0]) {
           client.say(nick, bodyObj["errors"][0]);
-        } else {
+        } 
+        else {
           client.say(channel, 'Posted ' + nick + '\'s post to thread #' + alertRegex[2]);
           console.log('lat post time', latestPostTime);
           latestPostTime += (120*1000); // Don't read back the new msg
+          rateLimiterTime = new Date.valueOf(); // Set cooldown to start now
         }
       })
-    } else {
+    }
+
+    // -- Is not authorized --
+    else {
       client.say(channel, 'Cannot reply. You do not have an API key on file.')
     }
 
   }
 
-  // !help
+  // ----- //
+  // !help //
+  // ----- //
   if (alertRegex && alertRegex.length > 0 && alertRegex[1] === 'help') {
     client.say(nick, 'Currently, I only have one command:');
     client.say(nick, '!reply <Post ID> <Msg>');
     client.say(nick, 'The Post ID can be obtained from the URL. In the following example, 23 is the ID:');
     client.say(nick, '[ http://iiab.io/t/sandbox-testing-thread/23/13 ]');
+    client.say(nick, '--------------------------------------------');
+    client.say(nick, 'https://github.com/darkenvy/RSS-IRC-NodeBot/');
   }
 
-  // IIAB-Bot Help – old
-  if (text.match(bot + ' help')) {
-    client.say(channel, 'RSSIRCNodeBot, ' + nick + ': https://github.com/darkenvy/RSS-IRC-NodeBot/');
-  }
 });
 
 
-
-// -------------------- PM Bot Features ----------------------- //
-
-client.addListener('error', function(message) {
-    console.log('error: ', message);
-});
-
+// +-------------------------------------------------+ //
+// |                  PM Bot Features                | //
+// +-------------------------------------------------+ //
 // client.addListener('pm', function (from, message) {
 //   console.log('PM from %s => %s', from, message);
 
@@ -137,3 +154,6 @@ client.addListener('error', function(message) {
 //   }
 // });
 
+client.addListener('error', function(message) {
+    console.log('error: ', message);
+});
