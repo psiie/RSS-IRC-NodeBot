@@ -1,8 +1,8 @@
-var dotenv = require('dotenv').config();
-var FEEDSUB = require('feedsub');
+var dotenv    = require('dotenv').config();
+var FEEDSUB   = require('feedsub');
 var striptags = require('striptags');
-var IRC = require('irc');
-var request = require('request');
+var IRC       = require('irc');
+var request   = require('request');
 var authUsers = require('./auth_users');
 
 var server    = process.env['SERVER'];
@@ -10,9 +10,10 @@ var bot       = process.env['BOTNAME'];
 var channels  = [ process.env['CHANNEL1'] ];
 var feed      = process.env['FEED'];
 var postURL   = process.env['POSTURL'];
+var discourseBotAccount = process.env['DISCOURSEBOTACC'];
 
 var interval  = 1 // Minutes
-var latestPostTime = new Date().valueOf();
+var latestPostTime = new Date().valueOf() - (6*60*1000);
 var rateLimiterTime = 0;
 
 client = new IRC.Client(server, bot, {
@@ -42,8 +43,8 @@ reader.on('item', function(item) {
     var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
 
     // -- Truncate --
-    if (msg.length > 500) { // Is broke. Fix
-      msg = msg.match(/.{0,500}/)[0];
+    if (msg.length > 300) { // max length of 435. Including link
+      msg = msg.match(/.{0,300}/)[0];
       msg = msg + ' ... [message truncated] ... ';
     } 
     
@@ -65,6 +66,18 @@ reader.on('item', function(item) {
 
 client.addListener('message', function (nick, channel, text) {
   var alertRegex = text.match(/^!(.+?)(?:\s(.+?)\s(.+))?$/);
+  var sendMessageCB = function(err, res, body) {
+    var bodyObj = JSON.parse(body);
+    if (bodyObj.hasOwnProperty("errors") && bodyObj["errors"][0]) {
+      client.say(nick, bodyObj["errors"][0]);
+    } 
+    else {
+      client.say(channel, 'Posted ' + nick + '\'s post to thread #' + alertRegex[2]);
+      console.log('lat post time', latestPostTime);
+      latestPostTime += (120*1000); // Don't read back the new msg
+      rateLimiterTime = new Date().valueOf(); // Set cooldown to start now
+    }
+  }
 
   // ---------------------------- //
   // !reply <thread ID> <message> //
@@ -72,36 +85,36 @@ client.addListener('message', function (nick, channel, text) {
   if (alertRegex && alertRegex.length > 3 && alertRegex[1] === 'reply') {
     
     // -- Rate limiting --
-    if (new Date.valueOf() < rateLimiterTime + (60*1000)) {
-      client.say(channel, 'Cannot reply. I am still on cooldown. Please try again in 60 seconds.');
+    if (new Date().valueOf() < rateLimiterTime + (60*1000)) {
+      client.say(channel, 'Cannot reply. I am still on cooldown (Spam Control). Please try again in 60 seconds.');
     } 
 
     // -- Is authorized --
     else if (authUsers.hasOwnProperty(nick)) {
-      var options = {
+      request.post({
         url: postURL,
         qs: {
-          api_key: authUsers[nick],
           api_username: nick,
+          api_key: authUsers[nick],
           topic_id: alertRegex[2],
           raw: alertRegex[3]
         }
-      }
-      request.post(options, function(err, res, body) {
-        var bodyObj = JSON.parse(body);
-        if (bodyObj.hasOwnProperty("errors") && bodyObj["errors"][0]) {
-          client.say(nick, bodyObj["errors"][0]);
-        } 
-        else {
-          client.say(channel, 'Posted ' + nick + '\'s post to thread #' + alertRegex[2]);
-          console.log('lat post time', latestPostTime);
-          latestPostTime += (120*1000); // Don't read back the new msg
-          rateLimiterTime = new Date.valueOf(); // Set cooldown to start now
-        }
-      })
+      }, sendMessageCB);
     }
 
     // -- Is not authorized --
+    else if (discourseBotAccount.length > 0) {
+      request.post({
+        url: postURL,
+        qs: {
+          api_username: discourseBotAccount,
+          api_key: authUsers[discourseBotAccount],
+          topic_id: alertRegex[2],
+          raw: '**Posted on behalf of _' + nick + '_ on IRC**\n\n----------\n' + 
+                alertRegex[3]
+        }
+      }, sendMessageCB);
+    }
     else {
       client.say(channel, 'Cannot reply. You do not have an API key on file.')
     }
@@ -116,7 +129,9 @@ client.addListener('message', function (nick, channel, text) {
     client.say(nick, '!reply <Post ID> <Msg>');
     client.say(nick, 'The Post ID can be obtained from the URL. In the following example, 23 is the ID:');
     client.say(nick, '[ http://iiab.io/t/sandbox-testing-thread/23/13 ]');
+    client.say(nick, '');
     client.say(nick, '--------------------------------------------');
+    client.say(nick, 'View this open source project at');
     client.say(nick, 'https://github.com/darkenvy/RSS-IRC-NodeBot/');
   }
 
