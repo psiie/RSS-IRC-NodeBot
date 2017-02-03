@@ -18,5 +18,4 @@ The default interval is set to 1 minute. If this is too frequent, this can be ch
 ###ToDo
 * Create new threads
 * List all possible threads to reply to
-* Add cooldown to everything. IRC is easy to spam.
-* Fix long messages being cut off
+* Add password support for channels
