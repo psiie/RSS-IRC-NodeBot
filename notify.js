@@ -4,6 +4,7 @@ var striptags = require('striptags');
 var IRC       = require('irc');
 var request   = require('request');
 var authUsers = require('./auth_users');
+var htmlClean = require('./htmlClean.module');
 
 var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
@@ -40,11 +41,12 @@ reader.on('item', function(item) {
   if (postTime > latestPostTime) {
     latestPostTime = postTime;
     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
-    var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
+    var msg = htmlClean.get(item.description);
+    // var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
 
     // -- Truncate --
-    if (msg.length > 300) { // max length of 435. Including link
-      msg = msg.match(/.{0,300}/)[0];
+    if (msg.length > 250) { // max length of 435. Including link
+      msg = msg.match(/.{0,250}/)[0];
       msg = msg + ' ... [message truncated] ... ';
     } 
     
@@ -59,6 +61,10 @@ reader.on('item', function(item) {
   }
 
 });
+
+reader.on('error', function(err) { // This prevents a crash
+  console.log('ERROR: ', err);
+})
 
 // +-------------------------------------------------+ //
 // |                    !commands                    | //
