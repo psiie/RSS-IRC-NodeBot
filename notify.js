@@ -4,7 +4,7 @@ var striptags = require('striptags');
 var IRC       = require('irc');
 var request   = require('request');
 var authUsers = require('./auth_users');
-var htmlClean = require('./htmlClean.module');
+var htmlClean = require('./htmlClean.module.js');
 
 var server    = process.env['SERVER'];
 var bot       = process.env['BOTNAME'];
@@ -63,12 +63,16 @@ reader.on('item', function(item) {
 });
 
 reader.on('error', function(err) { // This prevents a crash
-  console.log('ERROR: ', err);
+  console.log('Reader error: ', err);
 })
 
 // +-------------------------------------------------+ //
 // |                    !commands                    | //
 // +-------------------------------------------------+ //
+
+client.addListener('error', function(message) {
+    console.log('IRC error: ', message);
+});
 
 client.addListener('message', function (nick, channel, text) {
   var alertRegex = text.match(/^!(.+?)(?:\s(.+?)\s(.+))?$/);

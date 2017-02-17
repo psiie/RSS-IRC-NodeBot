@@ -13,12 +13,8 @@ module.exports = {
         return current;
       }
       var get = function() {
-        if (cycle()) {
-          return '\u000302'; // dark blue
-        }
-        else {
-          return '\u000301'; // black
-        }
+        if (cycle()) {return '\u000302';} // dark blue
+        else         {return '\u000301';} // black
       }
       return get;
     }
