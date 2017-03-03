@@ -24,10 +24,10 @@ module.exports = {
     var $ = cheerio.load(html);
 
     // Clean up Uglies
-    $('code').replaceWith( IRC.colors.wrap('gray', '[CodeBlock] ') ) // colorize
-    $('blockquote').replaceWith( IRC.colors.wrap('gray', '[Quote] ') ) // colorize
-    $('img').replaceWith( IRC.colors.wrap('gray', '[Image] ') ) // colorize
-    $('a').replaceWith( IRC.colors.wrap('gray', '[Link] ') ) // colorize
+    $('code').replaceWith( IRC.colors.wrap('gray', ' [CodeBlock] ') ) // colorize
+    $('blockquote').replaceWith( IRC.colors.wrap('gray', ' [Quote] ') ) // colorize
+    $('img').replaceWith( IRC.colors.wrap('gray', ' [Image] ') ) // colorize
+    $('a').replaceWith( IRC.colors.wrap('gray', ' [Link] ') ) // colorize
 
     // Beautify List
     var each = $('li')

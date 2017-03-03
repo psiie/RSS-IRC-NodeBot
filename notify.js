@@ -14,7 +14,7 @@ var postURL   = process.env['POSTURL'];
 var discourseBotAccount = process.env['DISCOURSEBOTACC'];
 
 var interval  = 1 // Minutes
-var latestPostTime = new Date().valueOf() - (6*60*1000);
+var latestPostTime = new Date().valueOf() - (10*60*1000);
 var rateLimiterTime = 0;
 
 client = new IRC.Client(server, bot, {
@@ -29,6 +29,8 @@ reader = new FEEDSUB(feed, {
   forceInterval: true,
   autoStart: true,
 });
+
+
 
 // +-------------------------------------------------+ //
 // |                    Get Feed                     | //
