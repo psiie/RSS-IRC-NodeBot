@@ -14,7 +14,7 @@ var postURL   = process.env['POSTURL'];
 var discourseBotAccount = process.env['DISCOURSEBOTACC'];
 
 var interval  = 1 // Minutes
-var latestPostTime = new Date().valueOf() - (10*60*1000);
+var latestPostTime = new Date().valueOf() - (6*60*1000);
 var rateLimiterTime = 0;
 
 client = new IRC.Client(server, bot, {
@@ -44,7 +44,6 @@ reader.on('item', function(item) {
     latestPostTime = postTime;
     var poster = item['dc:creator'].match(/^(.+?)\s/)[1];
     var msg = htmlClean.get(item.description);
-    // var msg = striptags(item.description).replace(/\n/g, ' '); // Clean up
 
     // -- Truncate --
     if (msg.length > 250) { // max length of 435. Including link
@@ -59,7 +58,6 @@ reader.on('item', function(item) {
             IRC.colors.wrap('dark_red', poster + ' posted: ') + 
        msg +IRC.colors.wrap('dark_blue', ' [ ' + item.link + ' ]')
     );
-    
   }
 
 });

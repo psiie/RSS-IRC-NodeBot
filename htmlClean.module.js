@@ -3,24 +3,12 @@ var IRC = require('irc');
 
 module.exports = {
   get: function(html){
-    // An object that alternates what it returns
-    // probably can make shorter using a list[].
-    // var alternateColor = new function() {
-    //   var current = 0;
-    //   var cycle = function() {
-    //     current++;
-    //     current = current % 2;
-    //     return current;
-    //   }
-    //   var get = function() {
-    //     if (cycle()) {return '\u000302';} // dark blue
-    //     else         {return '\u000301';} // black
-    //   }
-    //   return get;
-    // }
-
-    html = html.slice(10, html.length-4); // cuts off <![CDATA[ ]]>
-    html = html.replace(/<br>/g, ' ');
+    
+    // Cheap way of checking for <![CDATA[ ... ]]>
+    if (html[1] == '!') {
+        html = html.slice(10, html.length-4); // cuts off <![CDATA[ ]]>
+        html = html.replace(/<br>/g, ' ');
+    }
     var $ = cheerio.load(html);
 
     // Clean up Uglies
